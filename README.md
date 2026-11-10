@@ -21,3 +21,9 @@ pixi run ./run.sh pets cars  # subset
 
 Datasets: `pets`, `cars`, `resisc45`, `flowers`, `fashion_mnist`, `food101` (see `src/feature_spreading/__init__.py` for HF ids).
 
+## Experiments
+
+`experiments/report.html` (standalone, open in a browser) explains the method from scratch and holds the results of the exploration:
+a graph metric learned from k-means clusters or pseudo-labels (ridge → AGOP), tuning and ablations, why sklearn's label propagation
+fails on this data, and one-class retrieval. The scripts that produced it are in `experiments/` (see `experiments/README.md`).
+

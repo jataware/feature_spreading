@@ -1,0 +1,11 @@
+dataset,seed,npc,method,acc,n_iter,frac_unreached,frac_labeled_never_listed,frac_all_never_listed
+resisc45,2,1,sklearn LabelPropagation (directed kNN),0.38062563067608474,2000.0,0.0,0.044444444444444446,0.0424
+resisc45,2,1,sklearn LabelSpreading (directed kNN),0.617356205852674,152.0,0.0,0.044444444444444446,0.0424
+resisc45,2,1,sklearn LabelPropagation (symmetrized kNN),0.6625630676084763,500.0,0.0,,
+resisc45,2,1,sklearn LabelSpreading (symmetrized kNN),0.6883955600403633,106.0,0.0,,
+resisc45,2,1,PPR on one-hot labels (repo graph),0.6823410696266398,,,,
+resisc45,2,5,sklearn LabelPropagation (directed kNN),0.7252356020942409,2000.0,0.0,0.04,0.0424
+resisc45,2,5,sklearn LabelSpreading (directed kNN),0.7868062827225131,180.0,0.0,0.04,0.0424
+resisc45,2,5,sklearn LabelPropagation (symmetrized kNN),0.8169633507853403,273.0,0.0,,
+resisc45,2,5,sklearn LabelSpreading (symmetrized kNN),0.8205235602094241,131.0,0.0,,
+resisc45,2,5,PPR on one-hot labels (repo graph),0.8201047120418848,,,,

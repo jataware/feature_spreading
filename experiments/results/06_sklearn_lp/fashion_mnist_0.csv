@@ -1,0 +1,11 @@
+dataset,seed,npc,method,acc,n_iter,frac_unreached,frac_labeled_never_listed,frac_all_never_listed
+fashion_mnist,0,1,sklearn LabelPropagation (directed kNN),0.34609218436873745,2000.0,0.0,0.2,0.0782
+fashion_mnist,0,1,sklearn LabelSpreading (directed kNN),0.5933867735470942,109.0,0.0,0.2,0.0782
+fashion_mnist,0,1,sklearn LabelPropagation (symmetrized kNN),0.4835671342685371,500.0,0.0,,
+fashion_mnist,0,1,sklearn LabelSpreading (symmetrized kNN),0.7258517034068136,76.0,0.0,,
+fashion_mnist,0,1,PPR on one-hot labels (repo graph),0.7130260521042084,,,,
+fashion_mnist,0,5,sklearn LabelPropagation (directed kNN),0.503030303030303,2000.0,0.0,0.12,0.0782
+fashion_mnist,0,5,sklearn LabelSpreading (directed kNN),0.6577777777777778,160.0,0.0,0.12,0.0782
+fashion_mnist,0,5,sklearn LabelPropagation (symmetrized kNN),0.7466666666666667,500.0,0.0,,
+fashion_mnist,0,5,sklearn LabelSpreading (symmetrized kNN),0.762020202020202,100.0,0.0,,
+fashion_mnist,0,5,PPR on one-hot labels (repo graph),0.7575757575757576,,,,
