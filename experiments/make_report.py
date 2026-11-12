@@ -25,6 +25,7 @@ A  = load('04_ablate')
 R  = load('05_retrieval')
 L  = load('06_sklearn_lp')
 E1 = load('02_explore')
+KV = load('09_knn_variants')
 
 for df, cols in [(A, ['sweep', 'it', 'K', 'lam', 'reg', 'k', 'alpha', 'fit_on', 'graph_from', 'lp_alpha', 'homophily']),
                  (R, ['subset', 'k', 'K', 'lam', 'it', 'm', 'reg', 'ppr_alpha', 'homophily'])]:
@@ -681,7 +682,8 @@ SUMMARY_PLACEHOLDER
 <p>The method is built from three ideas. Each is simple on its own.</p>
 
 <h3>A neighbor graph</h3>
-<p>Connect every point to the 10 points most similar to it, using cosine similarity. Make the connection mutual: if either point lists the other, they are linked. The result is a <em>k-nearest-neighbor graph</em>. It encodes the assumption that nearby points tend to share a class.</p>
+<p>Connect every point to the handful of points most similar to it, using cosine similarity. Make the connection mutual: if either point lists the other, they are linked. The result is a <em>k-nearest-neighbor graph</em>. It encodes the assumption that nearby points tend to share a class.</p>
+<p class="note">How many neighbors: the code’s setting is <code>k = 10</code>, but because of a strict “greater than” comparison that counts the point itself, each point actually lists <strong>8</strong> neighbors, and its self-loop is counted twice. Every result in this report was produced that way, and “k” below always means the code’s setting (so k = 5 is 3 neighbors and k = 20 is 18). Section 6 checks that this makes little difference.</p>
 <p>How true that assumption is can be measured, if you cheat and look at all the labels: <em>edge homophily</em> is the fraction of edges that join two points of the same class. It is a diagnostic used throughout this report. No method here gets to see it.</p>
 
 <h3>Spreading: personalized PageRank over the graph</h3>
@@ -723,7 +725,7 @@ SUMMARY_PLACEHOLDER
 
 <h2 id="method">4. The method that works</h2>
 <ol class="steps">
-<li><div><strong>Graph and spread.</strong> Build the 10-nearest-neighbor graph on the raw vectors <code>X</code> and spread them to get <code>P</code>, exactly as before.</div></li>
+<li><div><strong>Graph and spread.</strong> Build the neighbor graph on the raw vectors <code>X</code> and spread them to get <code>P</code>, exactly as before.</div></li>
 <li><div><strong>Make a target for every point.</strong> Either run k-means on <code>P</code> and use the cluster assignments (no labels involved), or train the few-shot classifier on <code>P</code> and use its predictions for all points as <em>pseudo-labels</em>. Or use both side by side.</div></li>
 <li><div><strong>Fit a linear model to those targets.</strong> Ridge regression from <code>P</code> to the one-hot targets, which is a single linear solve. Call the weights <code>W</code>.</div></li>
 <li><div><strong>Take its AGOP as a metric.</strong> <code>G = WᵀW</code>, damped with λ = 0.5.</div></li>
@@ -771,6 +773,7 @@ python experiments/make_report.py                   # rebuild this page from exp
     ['<code>experiments/04_ablate.py</code>',          'Stage 3: every number in sections 5 and 6.'],
     ['<code>experiments/05_retrieval.py</code>',       'Every number in section 8.'],
     ['<code>experiments/06_sklearn_lp.py</code>',      'Every number in section 7.'],
+    ['<code>experiments/09_knn_variants.py</code>',    'The neighbor-count check in section 6.'],
     ['<code>experiments/results/</code>',              'One CSV per (experiment, dataset, seed).'],
 ], num_from=9)}</div>
 
@@ -778,7 +781,7 @@ python experiments/make_report.py                   # rebuild this page from exp
 <dl class="gloss">
 <dt>1-shot, 5-shot</dt><dd>One, or five, labeled examples per class. Everything else is unlabeled.</dd>
 <dt>Transductive</dt><dd>The points to be labeled are all available while the method runs, so it can use their positions.</dd>
-<dt>kNN graph</dt><dd>Each point is linked to its k most similar points. Here k = 10, cosine similarity, links made mutual.</dd>
+<dt>kNN graph</dt><dd>Each point is linked to its most similar points by cosine similarity, links made mutual. The code’s k = 10 gives 8 real neighbors.</dd>
 <dt>Edge homophily</dt><dd>Fraction of graph edges joining two points of the same class. Needs all labels, so it is only a diagnostic.</dd>
 <dt>PPR</dt><dd>Personalized PageRank. The weights a restart-prone random walk assigns to the points around its start.</dd>
 <dt>α (alpha)</dt><dd>Probability the walk continues instead of restarting. Higher means smoothing reaches further. Default 0.85.</dd>
@@ -858,7 +861,7 @@ def mean_acc(key, npc):
     return float(np.nanmean([hv(key, d, npc) for d in DS]))
 
 SECTIONS['RESULTS'] = f"""
-<p>Every number is accuracy on the unlabeled points, averaged over seeds (each seed draws a different sample of points and a different labeled set). Settings were fixed in advance and are the same for every dataset: 10 neighbors, α = 0.85, K = 100 clusters, λ = 0.5, ridge penalty 1. Cluster targets use one round, pseudo-label targets use three. The final classifier is a linear SVM trained on the labeled points only.</p>
+<p>Every number is accuracy on the unlabeled points, averaged over seeds (each seed draws a different sample of points and a different labeled set). Settings were fixed in advance and are the same for every dataset: k = 10 (8 real neighbors), α = 0.85, K = 100 clusters, λ = 0.5, ridge penalty 1. Cluster targets use one round, pseudo-label targets use three. The final classifier is a linear SVM trained on the labeled points only.</p>
 {FIG_HEAD}
 <ul>
 <li><strong>Cluster targets (no labels in the graph).</strong> {pts(mean_delta('km', 1))} points on average at 1-shot (range {rng_('km', 1)}), ahead of feature spreading by at least a point on {count_of(n_wins('km', 1, tol=0.01))} datasets and level on the rest. At 5-shot: {pts(mean_delta('km', 5))} on average (range {rng_('km', 5)}), ahead by at least half a point on {count_of(n_wins('km', 5, tol=0.005))}.</li>
@@ -894,6 +897,23 @@ def ka(k, alpha, npc, km=True, ds=None):
     m = ((m_km('svc', 1) if (k, alpha) == (10, 0.85) else m_km('svc', 1, 'k_alpha', k=k, alpha=alpha)) if km else m_ppr('svc', k, alpha))
     a = acc(m, npc)
     return float(a[ds]) if ds else float(np.nanmean(a.values))
+
+def _kv(graph, k, w):
+    m = KV[(KV.graph == graph) & (KV.k == k) & (KV.self_w == w)].copy()
+    m['col'] = m.task + m.npc.astype(str) + m.pred
+    return m.groupby(['col', 'dataset']).score.mean().unstack('dataset').reindex(columns=DS)
+
+KV_COLS = [('classify1svc', '1-shot, SVM'), ('classify1lp', '1-shot, label prop.'), ('classify5svc', '5-shot, SVM'), ('classify5lp', '5-shot, label prop.'), ('retrieve1ppr', 'retrieval, 1 exemplar')]
+def kv_table():
+    rows = []
+    for g, gname in [('knn', 'Plain graph'), ('cluster_metric', 'Cluster-metric graph')]:
+        for k, w, name in [(8, 2, '8 neighbors, self-loop ×2 (the code)'), (8, 1, '8 neighbors'), (10, 1, 'clean 10 neighbors'), (10, 2, '10 neighbors, self-loop ×2')]:
+            t = _kv(g, k, w)
+            rows.append([f'{gname}: {name}'] + [float(t.loc[c].mean()) for c, _ in KV_COLS])
+    return table(['Graph'] + [n for _, n in KV_COLS], rows, caption='Mean over six datasets. Accuracy for classification, mean average precision for retrieval.')
+
+kv_max  = max(abs(float(_kv(g, 8, 2).loc[c].mean() - _kv(g, 10, 1).loc[c].mean())) for g in ['knn', 'cluster_metric'] for c, _ in KV_COLS)
+kv_cars = float((_kv('cluster_metric', 8, 2)['cars'] - _kv('cluster_metric', 10, 1)['cars']).mean())
 
 def abl_val(label_start, npc):
     return [r for r in abl_rows(npc) if r['label'].startswith(label_start)][0]['value']
@@ -938,6 +958,10 @@ SECTIONS['ABLATIONS'] = f"""
 <p>On average the learned metric helps at every graph setting tried: it is ahead of feature spreading at the same k and α in all five combinations, at both shot counts.</p>
 <p>The best amount of smoothing depends on how many labels there are. With one label per class, heavy smoothing is right: α = 0.85 averages {p(ka(10, 0.85, 1))} with the cluster-metric graph, against {p(ka(10, 0.5, 1))} at α = 0.5. With five labels per class, lighter smoothing is better: α = 0.5 averages {p(ka(10, 0.5, 5))} and k = 5 averages {p(ka(5, 0.85, 5))}, against {p(ka(10, 0.85, 5))} at the default. The difference is largest on cars, where the default cluster-metric graph scores {p(ka(10, 0.85, 5, ds='cars'))} at 5-shot, below the plain SVM ({p(hv('svc', 'cars', 5))}), and α = 0.5 scores {p(ka(10, 0.5, 5, ds='cars'))}, above it. Pushing α up to 0.95 lowers the average at both shot counts, with or without the metric.</p>
 <details class="numbers"><summary>Show the k and α table</summary>{kalpha_table()}</details>
+
+<h3>The neighbor-count quirk</h3>
+<p>Since the code’s k = 10 is really 8 neighbors with a doubled self-loop, a clean 10-nearest-neighbor graph with a single self-loop was run for comparison, with the k-means and ridge fit on the raw vectors. Averaged over datasets it is within {100 * kv_max:.1f} points of the original on every measure. The self-loop weight makes no measurable difference. The neighbor count matters slightly on cars, the dataset with the weakest graph, where the clean 10 is about {100 * kv_cars:.1f} points lower.</p>
+<div class="tablewrap">{kv_table()}</div>
 
 <h3>Kernel or linear AGOP</h3>
 <p>The original idea used a kernel predictor, whose AGOP has to be computed by averaging gradients over every point. The linear version is a single matrix product. Where the kernel version was affordable (50 classes or fewer), the two are close: kernel is up to a point and a half ahead at 5-shot and about the same at 1-shot, at many times the cost.</p>
@@ -1026,10 +1050,12 @@ SECTIONS['RECIPE'] = f"""
 <pre><code>X      = normalize(X)                                   # rows to unit length
 labels = kmeans(X, K=100)                               # K = 100–400; too few clusters is harmful
                                                         # (clustering raw X scored the same as clustering spread X)
-W      = ridge(X, one_hot(labels), penalty=1)           # one linear solve; W is K × d
+W      = ridge(X, one_hot(labels), penalty=n / 5000)    # one linear solve; W is K × d. Penalty 1 was tuned at
+                                                        # n ≈ 5,000; scale it with n to keep the same strength
 G      = W.T @ W                                        # AGOP of the linear model
 M      = (1 - lam) * I + lam * G * d / trace(G)         # lam = 0.5 (anything from 0.5 to 1 is fine)
-adj    = knn_graph(normalize(X @ sqrtm(M)), k=10)       # mutual: linked if either lists the other
+adj    = knn_graph(normalize(X @ sqrtm(M)), k=8)        # 8 real neighbors (what the code's k=10 does); 10 is
+                                                        # within about half a point. Mutual: linked if either lists the other
 P      = normalize(ppr(adj, alpha=0.85) @ X)            # spread the ORIGINAL vectors
 
 # classification, few labels per class
@@ -1053,6 +1079,7 @@ SECTIONS['CAVEATS'] = f"""
 <li><strong>Settings were chosen with test labels in view.</strong> There is no validation set at 1-shot. The defaults (K = 100, λ = 0.5, ridge 1) were fixed as the center of the sweeps before the cross-dataset runs, and the sweeps show accuracy is flat around them, but the earlier exploration that led to this design used pets heavily. Pets is also where the gains are largest.</li>
 <li><strong>One kind of vector.</strong> All six datasets are embeddings from the same image model. The methods are generic, but the results have not been checked on embeddings from other models, on text, or on tabular data.</li>
 <li><strong>Subsampled.</strong> Each run uses at most 5,000 points. Neighbor graphs get denser and usually better with more points, which could shrink or grow these gaps.</li>
+<li><strong>Settings tuned at one size.</strong> The ridge penalty of 1 is not scaled by the number of points. The quantity it is added to grows in proportion to n, so on a much larger collection the same penalty is relatively weaker; scaling it as n / 5,000 keeps the tested strength. The cluster count (100) and neighbor count were likewise only tested at 3,700 to 5,000 points.</li>
 <li><strong>Transductive only.</strong> Every method here labels the points it was given. Labeling a new point later would need it to be added to the graph.</li>
 <li><strong>Retrieval negatives.</strong> The one-vs-rest scorers treat unlabeled points as negatives, some of which are true positives. That matches the real setting and is part of why those scorers do poorly with one exemplar.</li>
 <li><strong>The ceilings are not targets.</strong> They use all labels to build the graph. They show the graph is still the limiting factor, not what a label-free method could reach.</li>

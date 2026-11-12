@@ -1,9 +1,16 @@
 [project]
 authors = [{name = "bkj", email = "bkj.322@gmail.com"}]
-dependencies = []
+dependencies = ["numpy", "scipy", "scikit-learn"]
+description = "Few-label classification of fixed vectors by smoothing over a nearest-neighbor graph. No network training."
+keywords = ["semi-supervised learning", "few-shot", "label propagation", "embeddings", "graph"]
 name = "feature_spreading"
+readme = "README.md"
 requires-python = ">= 3.11"
 version = "0.1.0"
+
+[project.optional-dependencies]
+# only needed to reproduce the experiments (the `fs` command, experiments/ and blog/)
+experiments = ["pandas", "rich", "graphlearning", "torch", "transformers", "datasets", "pillow", "soundfile"]
 
 [project.scripts]
 fs = "feature_spreading.cli:main"
@@ -18,6 +25,7 @@ platforms = ["osx-arm64"]
 
 [tool.pixi.pypi-dependencies]
 feature_spreading = { path = ".", editable = true }
+graphlearning = ">=1.7.5,<2"
 
 [tool.pixi.tasks]
 
@@ -30,3 +38,4 @@ transformers = ">=5.22.2,<6"
 datasets = ">=5.1.0,<6"
 pillow = ">=13.0.0,<14"
 rich = ">=15.0.0,<16"
+pysoundfile = ">=0.14.0,<0.15"

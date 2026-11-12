@@ -17,6 +17,9 @@ and write one CSV. None of them download anything.
 | `04_ablate.py` | Stage 3: tuning + ablations with K independent of the class count. Source of the classification sections of the report. Runs 1-shot and 5-shot together. | `<dataset> <seed> <out.csv>` |
 | `05_retrieval.py` | One-class retrieval: 1 or 5 exemplars of a single class, rank everything else. | `<dataset> <seed> <out.csv>` |
 | `06_sklearn_lp.py` | Why sklearn's kNN label propagation fails here (directed graph) and what fixes it. | `<dataset> <seed> <out.csv>` |
+| `07_mlp_agop.py` | Swaps the ridge model for a one-hidden-layer MLP (closed-form AGOP). Worse than ridge with cluster / pseudo-label targets. Not in the report. | `<dataset> <seed> <out.csv>` |
+| `08_active_retrieval.py` | Active retrieval: retrieve top 10, get noisy relevance labels, update the query model, repeat. Not yet in the report. | `<dataset> <seed> <out.csv>` |
+| `09_knn_variants.py` | The repo's `k=10` graph is really 8 neighbors + a double self-loop; compares it with a clean 10. | `<dataset> <seed> <out.csv>` |
 | `make_report.py` | Rebuilds `report.html` from `results/`. Uses `report_lib.py` (inline-SVG helpers). | none |
 
 ## Re-running

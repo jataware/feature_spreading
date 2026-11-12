@@ -1,3 +1,9 @@
+from .spreading import SpreadingClassifier, SpreadingTransformer, knn_graph, normalized_adjacency, ppr_smooth, cluster_metric
+
+__all__ = ['SpreadingClassifier', 'SpreadingTransformer', 'knn_graph', 'normalized_adjacency', 'ppr_smooth', 'cluster_metric']
+
+# -- used by the `fs` command line tool and the scripts in experiments/ (not part of the library API)
+
 DATA_DIR = "data"
 MODEL    = "openai/clip-vit-large-patch14"
 

@@ -3,3 +3,4 @@ __pycache__/
 .pixi/*
 !.pixi/config.toml
 data/
+.secrets
